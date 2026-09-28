@@ -30,11 +30,11 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
   --primary:#9F2241;--primary-dk:#691C32;--primary-lt:#F9EEF2;--primary-mid:#C4435E;
   --accent:#235B4E;--accent-dk:#10312B;--accent-lt:#EAF3EF;
   --gold:#BC955C;--gold-dk:#8A6A35;--gold-lt:#FBF5EA;
-  --sand:#DDC9A3;--bg:#F8F4EF;--bg-warm:#F3EDE4;--white:#FFFFFF;
-  --ink:#1C1411;--muted:#7C7068;--border:#E5DAD0;--border-dk:#D4C4B5;
-  --sh-xs:0 1px 3px rgba(105,28,50,.07);
-  --sh-sm:0 2px 8px rgba(105,28,50,.09);
-  --sh-md:0 6px 24px rgba(105,28,50,.13);
+  --sand:#DDC9A3;--bg:#F6F6F4;--bg-warm:#F0EFEC;--white:#FFFFFF;
+  --ink:#252126;--muted:#6E6870;--border:#E5E2E4;--border-dk:#D5CFD2;
+  --sh-xs:0 2px 4px rgba(35,22,29,.025),0 8px 24px rgba(35,22,29,.035);
+  --sh-sm:0 3px 8px rgba(35,22,29,.035),0 12px 32px rgba(35,22,29,.055);
+  --sh-md:0 6px 16px rgba(35,22,29,.04),0 20px 48px rgba(35,22,29,.08);
   --sh-lg:0 16px 48px rgba(105,28,50,.17);
   --r-sm:8px;--r-md:14px;--r-lg:20px;
   --safe-b:env(safe-area-inset-bottom,0px);
@@ -51,21 +51,34 @@ body{
 /* ════════════════════════════════════════
    HEADER
 ════════════════════════════════════════ */
-.header{background:var(--white);padding-top:var(--safe-t)}
+.header{background:linear-gradient(180deg,#FFFFFF 50%,var(--bg));
+  padding:var(--safe-t) 24px 0}
 .institutional-logos{max-width:1380px;margin:0 auto;padding:8px 24px;
   display:flex;justify-content:center}
-.institutional-logos img{display:block;width:100%;max-width:640px;height:auto;
+.institutional-logos img{display:block;width:100%;max-width:600px;height:auto;
   aspect-ratio:5906 / 589;object-fit:contain}
-.header-band{background:var(--primary-dk);border-top:2px solid var(--gold)}
-.header-inner{max-width:1380px;margin:0 auto;padding:10px 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px}
-.header-text{min-width:0}
+.header-band{max-width:1332px;margin:0 auto;position:relative;isolation:isolate;
+  background:radial-gradient(ellipse at 95% 0%,rgba(188,149,92,.19),transparent 52%),
+    linear-gradient(115deg,#481729,#691C32 65%,#751F39);
+  border:1px solid rgba(105,28,50,.15);border-radius:16px;overflow:hidden;
+  box-shadow:0 2px 0 rgba(255,255,255,.16) inset,0 8px 24px rgba(78,21,40,.14)}
+.header-band::after{content:'';position:absolute;width:260px;height:260px;
+  right:9%;top:-182px;border:1px solid rgba(221,201,163,.12);border-radius:50%;
+  box-shadow:0 0 0 28px rgba(221,201,163,.035),0 0 0 58px rgba(221,201,163,.025);
+  pointer-events:none;z-index:-1}
+.header-inner{padding:12px 22px;display:flex;align-items:center;
+  justify-content:space-between;gap:20px}
+.header-text{min-width:0;padding-left:14px;border-left:2px solid var(--gold)}
 .header-text .title{font-family:'Plus Jakarta Sans',system-ui,sans-serif;
-  font-size:clamp(19px,2.2vw,26px);font-weight:800;color:var(--white);
-  line-height:1.2;letter-spacing:-.5px}
-.header-text .subtitle{font-size:13px;font-weight:500;color:#F0DDE3;margin-top:4px}
-.header-right{flex-shrink:0;text-align:right}
-#last-update{font-size:11px;color:#F0DDE3;font-variant-numeric:tabular-nums}
+  color:var(--white);line-height:1.1}
+.jurisdiction-label{display:block;font-size:11px;font-weight:600;
+  letter-spacing:1.6px;text-transform:uppercase;color:#EBD7DE;margin-bottom:5px}
+.jurisdiction-name{display:block;font-size:32px;font-weight:800;letter-spacing:-1px}
+.header-right{flex-shrink:0;text-align:right;display:flex;flex-direction:column;gap:7px}
+.header-service{display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  font-size:14px;font-weight:700;color:var(--white)}
+.header-service svg{color:var(--sand)}
+#last-update{font-size:11px;color:#EBD7DE;font-variant-numeric:tabular-nums}
 #last-update:not(:empty)::before{content:'Actualizado · ';color:var(--sand)}
 
 /* ════════════════════════════════════════
@@ -81,8 +94,8 @@ body{
   padding:16px 20px;box-shadow:var(--sh-xs);position:relative;overflow:hidden;
   transition:box-shadow .2s,transform .22s;cursor:default}
 .stat-card:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  border-radius:var(--r-md) var(--r-md) 0 0;background:var(--sc,var(--primary))}
+.stat-card::before{content:'';position:absolute;top:16px;right:0;width:3px;height:28px;
+  border-radius:3px 0 0 3px;background:var(--sc,var(--primary));opacity:.65}
 .stat-card:nth-child(1){--sc:var(--primary)}.stat-card:nth-child(2){--sc:var(--primary-mid)}
 .stat-card:nth-child(3){--sc:var(--gold)}.stat-card:nth-child(4){--sc:var(--accent)}
 .stat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
@@ -93,9 +106,15 @@ body{
 .stat-card:nth-child(4) .stat-ico{background:var(--accent-lt);color:var(--accent)}
 .stat-label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;
   color:var(--muted);margin-bottom:4px}
-.stat-val{font-family:'Playfair Display',serif;font-size:34px;font-weight:800;
-  color:var(--ink);line-height:1}
+.stat-val{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:34px;font-weight:800;
+  color:var(--ink);line-height:1;letter-spacing:-1.2px;font-variant-numeric:tabular-nums}
 .stat-sub{font-size:10.5px;color:var(--muted);margin-top:4px;font-weight:500}
+@media(min-width:768px){
+  .stat-card{display:grid;grid-template-columns:1fr auto;column-gap:16px;padding:18px 20px}
+  .stat-label,.stat-val,.stat-sub{grid-column:1}
+  .stat-ico{grid-column:2;grid-row:1 / 4;align-self:center;margin:0;width:42px;height:42px;border-radius:12px}
+  .stat-ico svg{width:18px;height:18px}
+}
 
 /* ════════════════════════════════════════
    FILTROS
@@ -176,12 +195,16 @@ body{
 .section-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
   background:var(--white);border:1px solid var(--border);padding:3px 11px;border-radius:999px}
 .section-controls{display:flex;align-items:center;gap:8px}
-.style-btns{display:flex;gap:3px}
-.stbtn{background:none;border:1.5px solid var(--border);border-radius:var(--r-sm);
+.style-btns{display:flex;gap:3px;background:var(--bg-warm);padding:3px;
+  border:1px solid var(--border);border-radius:11px}
+.stbtn{background:none;border:1px solid transparent;border-radius:var(--r-sm);
   padding:6px 11px;cursor:pointer;color:var(--muted);
   font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:700;
   transition:all .18s;white-space:nowrap}
-.stbtn.active,.stbtn:hover{background:var(--primary);color:white;border-color:var(--primary)}
+.stbtn:hover{background:var(--white);color:var(--primary-dk)}
+.stbtn.active{background:var(--primary-dk);color:white;border-color:var(--primary-dk);
+  box-shadow:0 2px 5px rgba(105,28,50,.18)}
+.stbtn:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 
 /* ════════════════════════════════════════
    GRID
@@ -435,12 +458,18 @@ body{
 @media(max-width:767px){
 
   /* — Header compacto — */
-  .institutional-logos{padding:10px 12px}
-  .header-inner{padding:10px 14px;gap:5px;flex-direction:column;align-items:flex-start}
-  .header-text .title{font-size:20px;max-width:32ch;letter-spacing:-.35px}
-  .header-text .subtitle{font-size:12px;margin-top:3px}
-  .header-right{text-align:left}
-  .header-right:has(#last-update:empty){display:none}
+  .header{padding-left:12px;padding-right:12px}
+  .institutional-logos{padding:10px 0}
+  .header-band{border-radius:14px}
+  .header-inner{padding:13px 14px;gap:10px;align-items:center}
+  .header-text{padding-left:10px;flex:1}
+  .jurisdiction-label{font-size:9px;letter-spacing:.65px;margin-bottom:5px}
+  .jurisdiction-name{font-size:28px;letter-spacing:-.85px}
+  .header-right{max-width:140px;gap:6px}
+  .header-service{font-size:11px;gap:5px}
+  .header-service svg{width:13px;height:13px}
+  #last-update{font-size:9px;line-height:1.5;max-width:120px}
+  #last-update:not(:empty)::before{content:'Actualizado ';display:block}
 
   /* — Page padding — */
   .page{padding:12px 12px 60px}
@@ -580,7 +609,10 @@ body{
   .stat-card{padding:10px 7px}
   .stat-val{font-size:21px}
   .stat-label{font-size:8px;letter-spacing:.3px}
-  .header-text .title{font-size:19px}
+  .header-inner{padding-left:12px;padding-right:12px}
+  .jurisdiction-label{font-size:8.5px;letter-spacing:.45px}
+  .jurisdiction-name{font-size:26px}
+  .header-service{font-size:10px}
   .stbtn{font-size:10px;padding:9px 4px}
 }
 </style>
@@ -602,10 +634,10 @@ body{
   <div class="header-band">
     <div class="header-inner">
       <div class="header-text">
-        <h1 class="title">Jurisdicción Sanitaria Texcoco</h1>
-        <p class="subtitle">Jornadas de Salud</p>
+        <h1 class="title"><span class="jurisdiction-label">Jurisdicción Sanitaria</span> <span class="jurisdiction-name">Texcoco</span></h1>
       </div>
       <div class="header-right">
+        <p class="header-service"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>Jornadas de Salud</p>
         <div id="last-update"></div>
       </div>
     </div>
