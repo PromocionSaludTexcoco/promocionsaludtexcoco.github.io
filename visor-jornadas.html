@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#691C32">
+<title>Jornadas de Salud · JS Texcoco · ISEM</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* FIX 2: Restricción absoluta del ancho para evitar el "zoom out" fantasma */
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+#map{touch-action:none}
+
+/* FIX 3: Evitar que textos largos (nombres, direcciones) empujen el contenedor en móviles */
+.card-name, .card-dir, .header-text .title {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+:root{
+  --primary:#9F2241;--primary-dk:#691C32;--primary-lt:#F9EEF2;--primary-mid:#C4435E;
+  --accent:#235B4E;--accent-dk:#10312B;--accent-lt:#EAF3EF;
+  --gold:#BC955C;--gold-dk:#8A6A35;--gold-lt:#FBF5EA;
+  --sand:#DDC9A3;--bg:#F8F4EF;--bg-warm:#F3EDE4;--white:#FFFFFF;
+  --ink:#1C1411;--muted:#7C7068;--border:#E5DAD0;--border-dk:#D4C4B5;
+  --sh-xs:0 1px 3px rgba(105,28,50,.07);
+  --sh-sm:0 2px 8px rgba(105,28,50,.09);
+  --sh-md:0 6px 24px rgba(105,28,50,.13);
+  --sh-lg:0 16px 48px rgba(105,28,50,.17);
+  --r-sm:8px;--r-md:14px;--r-lg:20px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);
+  min-height:100dvh;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ════════════════════════════════════════
+   HEADER
+════════════════════════════════════════ */
+.header{
+  background:var(--primary-dk);
+  background-image:radial-gradient(ellipse at 75% 0%,rgba(159,34,65,.55) 0%,transparent 55%),
+    linear-gradient(180deg,#6B1C31 0%,#541628 100%);
+  position:relative;overflow:hidden;
+  padding-top:var(--safe-t);
+}
+.header::before{content:'';position:absolute;inset:0;
+  background-image:repeating-linear-gradient(-55deg,rgba(255,255,255,.018) 0px,rgba(255,255,255,.018) 1px,transparent 1px,transparent 22px);
+  pointer-events:none}
+.header-stripe{height:4px;background:linear-gradient(90deg,var(--primary) 0%,var(--primary) 38%,var(--gold) 38%,var(--gold) 68%,var(--sand) 68%)}
+.header-inner{max-width:1380px;margin:0 auto;padding:11px 24px 13px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:5px;position:relative;z-index:1}
+.header-logo{height:46px;width:auto;object-fit:contain;
+  filter:drop-shadow(0 1px 4px rgba(0,0,0,.25));flex-shrink:0}
+.header-div{display:none}
+.header-text{min-width:0;width:100%}
+.header-text .eyebrow{font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:2px}
+.header-text .title{font-family:'Playfair Display',serif;font-size:25px;
+  font-weight:800;color:white;line-height:1.1;letter-spacing:.3px}
+.header-text .subtitle{font-size:11.5px;color:rgba(255,255,255,.58);margin-top:2px}
+.header-right{margin-left:0;display:flex;flex-direction:row;align-items:center;
+  justify-content:center;gap:10px;flex-shrink:0;margin-top:2px}
+.header-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  border-radius:999px;padding:5px 16px;font-size:9.5px;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.85)}
+#last-update{font-size:9.5px;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace}
+
+/* ════════════════════════════════════════
+   PAGE
+════════════════════════════════════════ */
+.page{max-width:1380px;margin:0 auto;padding:20px 24px 64px}
+
+/* ════════════════════════════════════════
+   STATS
+════════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:16px 20px;box-shadow:var(--sh-xs);position:relative;overflow:hidden;
+  transition:box-shadow .2s,transform .22s;cursor:default}
+.stat-card:hover{box-shadow:var(--sh-md);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:var(--r-md) var(--r-md) 0 0;background:var(--sc,var(--primary))}
+.stat-card:nth-child(1){--sc:var(--primary)}.stat-card:nth-child(2){--sc:var(--primary-mid)}
+.stat-card:nth-child(3){--sc:var(--gold)}.stat-card:nth-child(4){--sc:var(--accent)}
+.stat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:10px}
+.stat-card:nth-child(1) .stat-ico{background:var(--primary-lt);color:var(--primary)}
+.stat-card:nth-child(2) .stat-ico{background:#FBE8EE;color:var(--primary-mid)}
+.stat-card:nth-child(3) .stat-ico{background:var(--gold-lt);color:var(--gold-dk)}
+.stat-card:nth-child(4) .stat-ico{background:var(--accent-lt);color:var(--accent)}
+.stat-label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;
+  color:var(--muted);margin-bottom:4px}
+.stat-val{font-family:'Playfair Display',serif;font-size:34px;font-weight:800;
+  color:var(--ink);line-height:1}
+.stat-sub{font-size:10.5px;color:var(--muted);margin-top:4px;font-weight:500}
+
+/* ════════════════════════════════════════
+   FILTROS
+════════════════════════════════════════ */
+.filters-bar{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:11px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  margin-bottom:14px;box-shadow:var(--sh-xs)}
+.filter-label{font-size:9.5px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.filters-bar input,.filters-bar select{
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:500;
+  padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  background:var(--bg);color:var(--ink);flex:1;min-width:120px;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  appearance:none;-webkit-appearance:none}
+.filters-bar select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237C7068' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.filters-bar input:focus,.filters-bar select:focus{
+  border-color:var(--primary);box-shadow:0 0 0 3px rgba(159,34,65,.1);background:var(--white)}
+.filter-sep{width:1px;height:26px;background:var(--border);flex-shrink:0}
+
+/* ════════════════════════════════════════
+   MAPA
+════════════════════════════════════════ */
+.map-section{display:grid;grid-template-columns:1fr 340px;gap:0;margin-bottom:18px;
+  border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh-md)}
+.map-wrap{position:relative}
+#map{height:320px;width:100%}
+.map-legend{position:absolute;bottom:12px;left:12px;z-index:1000;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;box-shadow:var(--sh-sm)}
+.legend-hd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.legend-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:10.5px;font-weight:500;color:var(--ink)}
+.legend-row:last-child{margin-bottom:0}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* Panel lateral */
+.map-detail{background:var(--white);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;min-height:0;position:relative}
+.map-detail-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:10px;color:var(--muted);padding:24px;text-align:center}
+.map-detail-empty svg{opacity:.3}
+.map-detail-empty p{font-size:12px;font-weight:500;line-height:1.5}
+.map-detail-card{padding:20px;overflow-y:auto;height:320px}
+.detail-close-btn{display:none;position:absolute;top:10px;right:10px;
+  width:28px;height:28px;border-radius:50%;background:var(--bg-warm);
+  border:1px solid var(--border);color:var(--muted);align-items:center;
+  justify-content:center;cursor:pointer;z-index:5;font-size:14px}
+.detail-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dk));color:white;
+  border:none;padding:12px 16px;border-radius:var(--r-sm);
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;text-decoration:none;transition:opacity .18s;min-height:44px}
+.detail-btn:hover{opacity:.87}
+
+/* Botón expandir/colapsar mapa (solo móvil) */
+.map-toggle-btn{display:none;width:100%;background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:12px 16px;margin-bottom:10px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;
+  color:var(--primary-dk);cursor:pointer;text-align:left;
+  box-shadow:var(--sh-xs);align-items:center;gap:10px;
+  transition:background .15s}
+.map-toggle-btn:active{background:var(--primary-lt)}
+.map-toggle-btn svg{flex-shrink:0;transition:transform .3s}
+.map-toggle-btn.open svg{transform:rotate(180deg)}
+.map-section-wrap{transition:all .3s ease}
+.map-section-wrap.collapsed{display:none}
+.filters-wrap.collapsed{display:none}
+
+/* ════════════════════════════════════════
+   SECCIÓN TARJETAS
+════════════════════════════════════════ */
+.section-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.section-title{font-size:10.5px;font-weight:800;display:flex;align-items:center;
+  gap:7px;color:var(--primary-dk);text-transform:uppercase;letter-spacing:.9px}
+.section-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+  background:var(--white);border:1px solid var(--border);padding:3px 11px;border-radius:999px}
+.section-controls{display:flex;align-items:center;gap:8px}
+.style-btns{display:flex;gap:3px}
+.stbtn{background:none;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  padding:6px 11px;cursor:pointer;color:var(--muted);
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:700;
+  transition:all .18s;white-space:nowrap}
+.stbtn.active,.stbtn:hover{background:var(--primary);color:white;border-color:var(--primary)}
+
+/* ════════════════════════════════════════
+   GRID
+════════════════════════════════════════ */
+.cards-grid{display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
+@media(max-width:1049px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ════════════════════════════════════════
+   STATUS PILL
+════════════════════════════════════════ */
+.st-pill{display:inline-flex;align-items:center;gap:4px;font-size:8.5px;
+  font-weight:800;padding:3px 9px;border-radius:999px;
+  text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.st-hoy{background:#DCFCE7;color:#166534}
+.st-proxima{background:var(--primary-lt);color:var(--primary-dk)}
+.st-pronto{background:#FEF9C3;color:#854D0E}
+.st-pasada{background:var(--bg-warm);color:var(--muted)}
+.st-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.st-hoy .st-dot{background:#16A34A}
+.st-proxima .st-dot{background:var(--primary)}
+.st-pronto .st-dot{background:#CA8A04}
+.st-pasada .st-dot{background:var(--muted)}
+
+/* ════════════════════════════════════════
+   CARD A — Espaciosa
+════════════════════════════════════════ */
+.style-a .card{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r-md);cursor:pointer;transition:all .22s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;animation:cardIn .3s ease both;
+  display:flex;flex-direction:column}
+.style-a .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3.5px;background:var(--tc,var(--primary))}
+.style-a .card:hover{border-color:var(--tc,var(--primary));box-shadow:var(--sh-md);transform:translateY(-3px)}
+.style-a .card-body{padding:18px;flex:1;display:flex;flex-direction:column}
+.style-a .card-meta-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px}
+.style-a .card-date-block{background:var(--primary-lt);border-radius:var(--r-sm);
+  padding:8px 12px;text-align:center;flex-shrink:0;min-width:60px;
+  border:1px solid rgba(159,34,65,.12)}
+.style-a .card-date-day{font-family:'Playfair Display',serif;font-size:26px;
+  font-weight:800;color:var(--primary-dk);line-height:1}
+.style-a .card-date-month{font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--primary-mid);margin-top:2px}
+.style-a .card-date-year{font-size:9px;color:var(--muted);font-weight:500;margin-top:1px;font-family:'JetBrains Mono',monospace}
+.style-a .card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:1}
+.style-a .card-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;
+  color:var(--ink);line-height:1.3;margin-bottom:4px;text-wrap:pretty}
+.style-a .card-muni{font-size:10.5px;color:var(--muted);font-weight:500;
+  display:flex;align-items:center;gap:3px;margin-bottom:12px}
+.style-a .card-info{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.style-a .card-row{display:flex;align-items:flex-start;gap:7px;font-size:11px;
+  color:var(--muted);font-weight:500;line-height:1.4}
+.style-a .card-row svg{width:12px;height:12px;flex-shrink:0;margin-top:1.5px;opacity:.6}
+.style-a .card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:12px}
+.style-a .card-footer{display:flex;gap:6px;margin-top:auto;padding-top:12px;
+  border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.style-a .card-countdown{font-size:9.5px;color:var(--muted);font-weight:600;
+  font-family:'JetBrains Mono',monospace;margin-right:auto}
+
+/* ════════════════════════════════════════
+   CARD B — Editorial
+════════════════════════════════════════ */
+.style-b .card{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r-md);cursor:pointer;transition:all .22s cubic-bezier(.4,0,.2,1);
+  animation:cardIn .3s ease both;display:flex;flex-direction:row;overflow:hidden}
+.style-b .card:hover{border-color:var(--tc,var(--primary));box-shadow:var(--sh-md);transform:translateY(-3px)}
+.style-b .card-left{width:72px;flex-shrink:0;background:var(--tc,var(--primary));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 8px;gap:2px}
+.style-b .card-left-day{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:white;line-height:1}
+.style-b .card-left-month{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.75)}
+.style-b .card-left-dow{font-size:8px;color:rgba(255,255,255,.55);font-weight:600;
+  letter-spacing:.3px;text-transform:uppercase;margin-top:6px;text-align:center}
+.style-b .card-body{padding:14px 16px;flex:1;display:flex;flex-direction:column;min-width:0}
+.style-b .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.style-b .card-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;
+  color:var(--ink);line-height:1.3;text-wrap:pretty;flex:1;min-width:0}
+.style-b .card-muni{font-size:10px;color:var(--muted);font-weight:500;
+  display:flex;align-items:center;gap:3px;margin-bottom:9px}
+.style-b .card-info{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.style-b .card-row{display:flex;align-items:flex-start;gap:6px;font-size:10.5px;
+  color:var(--muted);font-weight:500;line-height:1.4}
+.style-b .card-row svg{width:11px;height:11px;flex-shrink:0;margin-top:1.5px;opacity:.6}
+.style-b .card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px}
+.style-b .card-footer{display:flex;gap:6px;margin-top:auto;padding-top:10px;
+  border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.style-b .card-countdown{font-size:9.5px;color:var(--muted);font-weight:600;
+  font-family:'JetBrains Mono',monospace;margin-right:auto}
+
+/* ════════════════════════════════════════
+   CARD C — Ficha
+════════════════════════════════════════ */
+.style-c .cards-grid{grid-template-columns:1fr}
+.style-c .card{background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r-md);cursor:pointer;transition:all .22s;
+  animation:cardIn .3s ease both;display:grid;
+  grid-template-columns:auto 1fr auto;align-items:center;overflow:hidden}
+.style-c .card:hover{border-color:var(--tc,var(--primary));box-shadow:var(--sh-sm);transform:translateY(-1px)}
+.style-c .card-left{width:80px;background:var(--bg-warm);border-right:1px solid var(--border);
+  padding:14px 10px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;align-self:stretch}
+.style-c .card-left-day{font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:var(--ink);line-height:1}
+.style-c .card-left-month{font-size:9px;font-weight:800;text-transform:uppercase;color:var(--muted);letter-spacing:.5px;margin-top:2px}
+.style-c .card-left-dow{font-size:8px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.3px;margin-top:4px}
+.style-c .card-body{padding:12px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.style-c .card-name{font-size:13.5px;font-weight:700;color:var(--ink);text-wrap:pretty;line-height:1.3}
+.style-c .card-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.style-c .card-muni{font-size:10px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:3px}
+.style-c .card-time{font-size:10px;color:var(--muted);font-weight:500;font-family:'JetBrains Mono',monospace}
+.style-c .card-dir{font-size:10px;color:var(--muted);max-width:340px}
+
+/* ── Avance de captura JS19 ───────────────────── */
+.capture-progress{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.72)}
+.capture-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:700}
+.capture-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px}
+.capture-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.capture-PROGRAMADA{color:#5d5148;background:#f1ece7}
+.capture-EN_CAPTURA{color:#765707;background:#fff3c4}
+.capture-PARCIAL{color:#8a4b08;background:#ffead4}
+.capture-COMPLETA{color:#176b45;background:#def3e8}
+.capture-SIN_REPORTE{color:#9b1c1c;background:#fee2e2}
+.capture-track{height:7px;margin-top:8px;border-radius:999px;overflow:hidden;background:#e6ded8}
+.capture-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--gold));transition:width .22s ease}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.style-c .card-right{padding:14px 16px;display:flex;flex-direction:column;
+  align-items:flex-end;gap:8px;border-left:1px solid var(--border);
+  align-self:stretch;justify-content:center;min-width:130px}
+.style-c .card-tags{display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end;max-width:200px}
+
+/* ════════════════════════════════════════
+   TARJETA VACUNACIÓN (consistente en los 3 estilos)
+════════════════════════════════════════ */
+.card-vac{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r-md);
+  cursor:pointer;transition:all .22s cubic-bezier(.4,0,.2,1);animation:cardIn .3s ease both;
+  display:flex;flex-direction:row;overflow:hidden}
+.card-vac:hover{border-color:var(--primary-dk);box-shadow:var(--sh-md);transform:translateY(-3px)}
+.card-vac .card-left{width:92px;flex-shrink:0;background:var(--primary-dk);
+  background-image:linear-gradient(160deg,#7A2238 0%,#591526 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:16px 8px}
+.card-vac .vac-mes{font-size:9px;font-weight:800;letter-spacing:1.6px;color:#E3C79E;text-transform:uppercase}
+.card-vac .vac-div{width:24px;height:2px;background:rgba(227,199,158,.55);border-radius:2px;margin:7px 0}
+.card-vac .vac-dias{font-size:12.5px;font-weight:800;color:#fff;line-height:1.3;letter-spacing:.4px;text-transform:uppercase}
+.card-vac .vac-rango{font-family:'Playfair Display',serif;font-size:25px;font-weight:800;color:#fff;line-height:1;margin:4px 0 3px}
+.card-vac .vac-diasw{font-size:8px;font-weight:700;letter-spacing:.6px;color:rgba(255,255,255,.72);text-transform:uppercase}
+.card-vac .card-body{padding:14px 16px;flex:1;display:flex;flex-direction:column;min-width:0}
+.card-vac .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.card-vac .card-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--ink);line-height:1.3;text-wrap:pretty;flex:1;min-width:0}
+.card-vac .card-muni{font-size:10px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:3px;margin-bottom:9px}
+.card-vac .card-info{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.card-vac .card-row{display:flex;align-items:flex-start;gap:6px;font-size:10.5px;color:var(--muted);font-weight:500;line-height:1.4}
+.card-vac .card-row svg{width:11px;height:11px;flex-shrink:0;margin-top:1.5px;opacity:.6}
+.card-vac .card-footer{display:flex;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.card-vac .card-countdown{font-size:9.5px;color:var(--muted);font-weight:600;font-family:'JetBrains Mono',monospace;margin-right:auto}
+
+/* ════════════════════════════════════════
+   SHARED
+════════════════════════════════════════ */
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:8.5px;font-weight:800;
+  padding:3px 8px;border-radius:999px;text-transform:uppercase;
+  letter-spacing:.4px;flex-shrink:0;white-space:nowrap}
+.t-lunes .badge,.t-lunes.badge{background:#EAF3EF;color:#235B4E;border:1.5px solid #235B4E}
+.t-miercoles .badge,.t-miercoles.badge{background:var(--primary-lt);color:var(--primary);border:1.5px solid var(--primary)}
+.t-jueves .badge,.t-jueves.badge{background:var(--gold-lt);color:#7A5A28;border:1.5px solid #A0742E}
+.t-movil .badge,.t-movil.badge{background:#E5EDEB;color:#10312B;border:1.5px solid #10312B}
+.t-especial .badge,.t-especial.badge{background:#F5EAEC;color:#691C32;border:1.5px solid #691C32}
+.t-default .badge,.t-default.badge{background:var(--accent-lt);color:var(--accent-dk);border:1.5px solid var(--accent)}
+.tag{font-size:8.5px;font-weight:700;background:var(--bg-warm);color:var(--muted);
+  padding:2px 7px;border-radius:3px;border:1px solid var(--border-dk);
+  text-transform:uppercase;letter-spacing:.2px}
+
+.btn-goto{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  gap:5px;font-size:10.5px;font-weight:700;color:white;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dk) 100%);
+  border:none;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none;
+  transition:opacity .18s;min-height:36px}
+.btn-goto:hover{opacity:.87}
+.btn-zoom{display:inline-flex;align-items:center;justify-content:center;
+  background:var(--bg);border:1.5px solid var(--border);color:var(--muted);
+  padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;transition:all .18s;
+  min-width:36px;min-height:36px}
+.btn-zoom:hover{background:var(--primary-lt);border-color:var(--primary);color:var(--primary)}
+
+/* ════════════════════════════════════════
+   EMPTY / ERROR
+════════════════════════════════════════ */
+.empty{grid-column:1/-1;text-align:center;padding:3.5rem 1.5rem;color:var(--muted)}
+.empty-ico{width:52px;height:52px;background:var(--primary-lt);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--primary)}
+.empty h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:5px;font-family:'Playfair Display',serif}
+.empty p{font-size:12px}
+.error-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--r-md);
+  padding:13px 18px;color:#991B1B;font-size:12.5px;margin-bottom:14px;display:none}
+
+/* ════════════════════════════════════════
+   LOADING
+════════════════════════════════════════ */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:14px;transition:opacity .5s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loader-ring{width:46px;height:46px;position:relative}
+.loader-ring::before,.loader-ring::after{content:'';position:absolute;inset:0;border-radius:50%}
+.loader-ring::before{border:3px solid var(--border)}
+.loader-ring::after{border:3px solid transparent;border-top-color:var(--primary);animation:spin .8s linear infinite}
+.loading-brand{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--primary-dk)}
+.loading-sub{font-size:12px;color:var(--muted)}
+
+/* ════════════════════════════════════════
+   TOAST
+════════════════════════════════════════ */
+.toast{position:fixed;bottom:calc(26px + var(--safe-b));left:50%;
+  transform:translateX(-50%) translateY(14px);background:var(--primary-dk);
+  color:white;padding:10px 22px;border-radius:999px;font-size:12px;font-weight:700;
+  z-index:9999;opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;box-shadow:var(--sh-lg);max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════ */
+.footer{text-align:center;padding:22px;font-size:11px;color:var(--muted);
+  border-top:1px solid var(--border);margin-top:24px;line-height:1.8}
+.footer-stripe{height:3px;background:linear-gradient(90deg,var(--primary) 0%,var(--primary) 35%,var(--gold) 35%,var(--gold) 68%,var(--accent) 68%);
+  border-radius:999px;max-width:260px;margin:0 auto 14px}
+
+/* ════════════════════════════════════════
+   TWEAKS
+════════════════════════════════════════ */
+#tweaks-panel{position:fixed;bottom:calc(24px + var(--safe-b));right:24px;z-index:8888;
+  background:white;border:1.5px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-lg);padding:18px 20px;min-width:240px;
+  display:none;flex-direction:column;gap:14px}
+#tweaks-panel.visible{display:flex}
+.tweak-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary-dk)}
+.tweak-group{display:flex;flex-direction:column;gap:6px}
+.tweak-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.tweak-opts{display:flex;gap:4px;flex-wrap:wrap}
+.tweak-btn{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;
+  border:1.5px solid var(--border);border-radius:6px;padding:6px 11px;
+  cursor:pointer;background:var(--bg);color:var(--ink);transition:all .15s}
+.tweak-btn.active{background:var(--primary);color:white;border-color:var(--primary)}
+
+/* ════════════════════════════════════════
+   ANIMS
+════════════════════════════════════════ */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ════════════════════════════════════════════════════════
+   MÓVIL — ≤ 767px
+════════════════════════════════════════════════════════ */
+@media(max-width:767px){
+
+  /* — Header compacto — */
+  .header-inner{padding:14px 14px 16px;gap:7px}
+  .header-logo{height:50px}
+  .header-div{display:none}
+  .header-text .eyebrow{font-size:9.5px;letter-spacing:1.4px;margin-bottom:3px}
+  .header-text .title{font-size:23px}
+  .header-text .subtitle{font-size:11px;margin-top:3px}
+  .header-right{gap:8px}
+  .header-badge{padding:4px 12px;font-size:8.5px;letter-spacing:1.2px}
+  #last-update{font-size:8.5px}
+
+  /* — Page padding — */
+  .page{padding:12px 12px 60px}
+
+  /* — Stats: tira horizontal deslizable — */
+  .stats-row{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:8px;margin-bottom:14px;overflow:visible}
+  .stat-card{
+    width:auto;min-width:0;max-width:none;
+    padding:12px 10px;border-radius:12px}
+  .stat-ico{width:26px;height:26px;border-radius:6px;margin-bottom:8px}
+  .stat-ico svg{width:13px;height:13px}
+  .stat-label{font-size:8.5px;letter-spacing:.5px;margin-bottom:3px}
+  .stat-val{font-size:28px}
+  .stat-sub{font-size:9.5px;margin-top:3px}
+
+  /* — Filtros apilados — */
+  .filters-bar{
+    padding:12px;gap:8px;border-radius:12px;
+    flex-direction:column;align-items:stretch}
+  .filter-label{font-size:10px;width:auto;margin-bottom:0}
+  .filter-sep{display:none}
+  .filters-bar input{
+    width:100%;min-width:0;min-height:46px;
+    font-size:15px;padding:12px 14px;border-radius:10px}
+  .filters-bar select{
+    width:100%;min-width:0;min-height:46px;
+    font-size:15px;padding:12px 40px 12px 14px;border-radius:10px}
+
+  /* — Mapa: botón toggle + colapsable — */
+  .map-toggle-btn{display:flex}
+  .map-section{
+    grid-template-columns:1fr;
+    border-radius:12px;box-shadow:var(--sh-sm)}
+  .map-detail{border-left:none;border-top:1px solid var(--border);position:relative}
+  .detail-close-btn{display:flex}
+  .map-detail-empty{min-height:72px;padding:16px;height:auto}
+  .map-detail-empty p{font-size:12.5px}
+  .map-detail-card{height:auto;max-height:380px;padding:18px}
+  #map{height:260px}
+  .map-legend{display:none}
+
+  /* — Sección título — */
+  .section-header{margin-bottom:10px;gap:8px}
+  .section-title{font-size:11px}
+  .section-count{font-size:11px}
+  .section-controls{width:100%}
+  .style-btns{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .stbtn{padding:10px 6px;font-size:11px;min-height:40px;border-radius:8px}
+
+  /* — Grid: 1 columna — */
+  .cards-grid{grid-template-columns:1fr;gap:10px}
+
+  /* — Tarjeta vacunación móvil — */
+  .card-vac .card-left{width:88px;padding:15px 8px}
+  .card-vac .vac-dias{font-size:13px}
+  .card-vac .vac-rango{font-size:27px}
+  .card-vac .card-name{font-size:15px}
+  .card-vac .card-muni{font-size:11.5px}
+  .card-vac .card-row{font-size:12px}
+  .card-vac .card-row svg{width:13px;height:13px}
+  .card-vac .card-footer .btn-goto{font-size:12.5px;min-height:40px}
+
+  /* — Card A móvil — */
+  .style-a .card-body{padding:16px}
+  .style-a .card-date-block{padding:9px 13px;min-width:62px}
+  .style-a .card-date-day{font-size:28px}
+  .style-a .card-date-month{font-size:9.5px}
+  .style-a .card-name{font-size:16px;margin-bottom:6px}
+  .style-a .card-muni{font-size:12px;margin-bottom:14px}
+  .style-a .card-row{font-size:12.5px;gap:8px}
+  .style-a .card-row svg{width:13px;height:13px}
+  .style-a .card-info{gap:7px;margin-bottom:14px}
+  .style-a .card-tags{gap:4px;margin-bottom:14px}
+  .style-a .tag{font-size:9.5px;padding:3px 9px}
+  .style-a .badge{font-size:9.5px;padding:4px 10px}
+  .style-a .card-footer{padding-top:14px;gap:8px}
+  .style-a .card-countdown{font-size:11px}
+  .style-a .btn-goto{font-size:13px;min-height:44px;padding:11px 16px}
+  .style-a .btn-zoom{min-width:44px;min-height:44px}
+  .style-a .st-pill{font-size:9.5px;padding:4px 10px}
+
+  /* — Card B móvil — */
+  .style-b .card-left{width:76px;padding:16px 10px}
+  .style-b .card-left-day{font-size:30px}
+  .style-b .card-left-month{font-size:10px}
+  .style-b .card-left-dow{font-size:9px;margin-top:8px}
+  .style-b .card-body{padding:16px 16px 14px}
+  .style-b .card-name{font-size:16px;line-height:1.35}
+  .style-b .card-muni{font-size:12px;margin-bottom:12px}
+  .style-b .card-info{gap:7px;margin-bottom:12px}
+  .style-b .card-row{font-size:12.5px;gap:8px}
+  .style-b .card-row svg{width:13px;height:13px}
+  .style-b .card-tags{gap:4px;margin-bottom:12px}
+  .style-b .tag{font-size:9.5px;padding:3px 9px}
+  .style-b .badge{font-size:9.5px;padding:4px 10px}
+  .style-b .card-footer{padding-top:12px;gap:8px}
+  .style-b .card-countdown{font-size:11px}
+  .style-b .btn-goto{font-size:13px;min-height:44px;padding:11px 16px}
+  .style-b .card-top{margin-bottom:10px}
+  .style-b .st-pill{font-size:9.5px;padding:4px 10px}
+
+  /* — Card C móvil: reshape a 2 cols — */
+  .style-c .card{grid-template-columns:auto 1fr;grid-template-rows:auto auto}
+  .style-c .card-left{grid-row:1/-1;width:72px;padding:14px 10px}
+  .style-c .card-left-day{font-size:26px}
+  .style-c .card-left-month{font-size:9.5px}
+  .style-c .card-body{padding:14px 14px 10px;grid-column:2}
+  .style-c .card-name{font-size:15px}
+  .style-c .card-sub{gap:8px}
+  .style-c .card-muni{font-size:12px}
+  .style-c .card-time{font-size:12px}
+  .style-c .card-dir{max-width:100%;font-size:11.5px}
+  .style-c .card-right{
+    grid-column:2;grid-row:2;
+    border-left:none;border-top:1px solid var(--border);
+    flex-direction:row;align-items:center;flex-wrap:wrap;
+    justify-content:flex-start;padding:10px 14px;min-width:0;gap:6px}
+  .style-c .card-right .btn-goto{margin-left:auto;flex:0 1 auto;min-width:100px;min-height:40px;font-size:12.5px}
+  .style-c .card-tags{max-width:100%;justify-content:flex-start}
+  .style-c .tag{font-size:9.5px;padding:3px 9px}
+  .style-c .badge{font-size:9.5px;padding:4px 10px}
+
+  /* — Tweaks panel — */
+  #tweaks-panel{left:12px;right:12px;bottom:calc(12px + var(--safe-b));min-width:0;padding:16px}
+
+  /* — Footer — */
+  .footer{padding:18px 14px;font-size:11.5px}
+  .footer-stripe{max-width:180px}
+}
+
+/* ════════════════════════════════════════
+   EXTRA PEQUEÑO — ≤ 380px
+════════════════════════════════════════ */
+@media(max-width:380px){
+  .stat-card{padding:10px 7px}
+  .stat-val{font-size:21px}
+  .stat-label{font-size:8px;letter-spacing:.3px}
+  .header-text .title{font-size:17px}
+  .header-logo{height:38px}
+  .stbtn{font-size:10px;padding:9px 4px}
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="loader-ring"></div>
+  <div class="loading-brand">Jornadas de Salud</div>
+  <div class="loading-sub">Cargando jornadas…</div>
+</div>
+
+<header class="header">
+  <div class="header-stripe"></div>
+  <div class="header-inner">
+    <img class="header-logo" src="https://salud.edomex.gob.mx/isem/imagenes/edomex-n-color.svg?v=5"
+         alt="Logo ISEM" onerror="this.style.display='none'">
+    <div class="header-div"></div>
+    <div class="header-text">
+      <div class="eyebrow">Instituto de Salud del Estado de México</div>
+      <div class="title">Jornadas de Salud</div>
+      <div class="subtitle">Jurisdicción Sanitaria · Texcoco</div>
+    </div>
+    <div class="header-right">
+      <div class="header-badge">JS · Texcoco</div>
+      <div id="last-update"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="error-box" id="error-box"></div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="stat-label">Total jornadas</div>
+      <div class="stat-val" id="s-total">—</div>
+      <div class="stat-sub">programadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="stat-label">Municipios</div>
+      <div class="stat-val" id="s-munis">—</div>
+      <div class="stat-sub">con cobertura</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="stat-label">Esta semana</div>
+      <div class="stat-val" id="s-week">—</div>
+      <div class="stat-sub">próximas</div>
+    </div>
+  </div>
+
+  <button class="map-toggle-btn" id="filter-toggle" onclick="toggleFiltros()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span id="filter-toggle-label">Buscar y filtrar</span>
+    <svg style="margin-left:auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+
+  <div class="filters-wrap collapsed" id="filters-wrap">
+  <div class="filters-bar">
+    <span class="filter-label">Buscar</span>
+    <input type="text" id="search" placeholder="Sede, municipio o programa…" autocomplete="off">
+    <div class="filter-sep"></div>
+    <select id="tipo">
+      <option value="">Todos los tipos</option>
+      <option value="lunes">🟢 Lunes</option>
+      <option value="miercoles">🔴 Miércoles Adulto Mayor</option>
+      <option value="jueves">🟡 Jueves Salud Mexiquenses</option>
+      <option value="movil">⚫ Jornada Móvil</option>
+      <option value="especial">🟤 Especial</option>
+      <option value="vacunacion">💉 Vacunación</option>
+    </select>
+    <select id="municipio-filter"><option value="">Todos los municipios</option></select>
+    <div class="filter-sep"></div>
+    <select id="periodo">
+      <option value="todas">Todas las fechas</option>
+      <option value="proximas" selected>Próximas jornadas</option>
+      <option value="semana">Esta semana</option>
+      <option value="mes">Este mes</option>
+      <option value="pasadas">Pasadas</option>
+    </select>
+  </div>
+  </div>
+
+  <button class="map-toggle-btn" id="map-toggle" onclick="toggleMap()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+    <span id="map-toggle-label">Ver mapa de jornadas</span>
+    <svg style="margin-left:auto" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </button>
+
+  <div class="map-section-wrap" id="map-section-wrap">
+    <div class="map-section">
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-legend" id="legend"></div>
+      </div>
+      <div class="map-detail" id="map-detail">
+        <button class="detail-close-btn" id="detail-close-btn" onclick="hideDetailPanel()" title="Cerrar">×</button>
+        <div class="map-detail-empty" id="detail-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <p>Toca un marcador para ver el detalle de la jornada</p>
+        </div>
+        <div class="map-detail-card" id="detail-card" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Jornadas programadas
+    </div>
+    <div class="section-controls">
+      <span class="section-count" id="cards-count"></span>
+      <div class="style-btns">
+        <button class="stbtn" id="sb-a" onclick="setStyle('a')">Espaciosa</button>
+        <button class="stbtn" id="sb-b" onclick="setStyle('b')">Editorial</button>
+        <button class="stbtn" id="sb-c" onclick="setStyle('c')">Ficha</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="cards-wrapper">
+    <div class="cards-grid" id="cards"></div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-stripe"></div>
+  <strong style="color:var(--primary-dk)">Jurisdicción Sanitaria Texcoco</strong> ·
+  Instituto de Salud del Estado de México<br>
+  Coordinación de Promoción de la Salud · Servicio <strong style="color:var(--primary)">GRATUITO</strong>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div id="tweaks-panel">
+  <div class="tweak-title">Tweaks</div>
+  <div class="tweak-group">
+    <div class="tweak-label">Estilo de tarjeta</div>
+    <div class="tweak-opts">
+      <button class="tweak-btn" id="tw-a" onclick="setStyle('a');twSync('a')">Espaciosa</button>
+      <button class="tweak-btn" id="tw-b" onclick="setStyle('b');twSync('b')">Editorial</button>
+      <button class="tweak-btn" id="tw-c" onclick="setStyle('c');twSync('c')">Ficha</button>
+    </div>
+  </div>
+  <div class="tweak-group">
+    <div class="tweak-label">Período por defecto</div>
+    <div class="tweak-opts">
+      <button class="tweak-btn" id="tw-p1" onclick="setPeriodo('proximas');twSync2('tw-p1')">Próximas</button>
+      <button class="tweak-btn" id="tw-p2" onclick="setPeriodo('semana');twSync2('tw-p2')">Esta semana</button>
+      <button class="tweak-btn" id="tw-p3" onclick="setPeriodo('todas');twSync2('tw-p3')">Todas</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+var TYPE_CONFIG={
+  lunes:    {color:'#235B4E',cls:'t-lunes',   label:'Lunes'},
+  miercoles:{color:'#9F2241',cls:'t-miercoles',label:'Miércoles Adulto Mayor'},
+  jueves:   {color:'#A0742E',cls:'t-jueves',  label:'Jueves Salud Mexiquenses'},
+  movil:    {color:'#10312B',cls:'t-movil',   label:'Jornada Móvil'},
+  especial: {color:'#691C32',cls:'t-especial',label:'Especial'},
+  vacunacion:{color:'#691C32',cls:'t-especial',label:'Vacunación'},
+};
+var MONTHS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var MONTHS_FULL=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var DAYS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+var DAYS_SHORT=['dom','lun','mar','mié','jue','vie','sáb'];
+var ALL_EVENTS=[],map,markersLayer,curStyle='b';
+var mapOpen=false;
+
+/* ── Utils ───────────────────────────────────── */
+function tipoKey(t){
+  if(!t)return null;
+  var s=t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(s.includes('lunes'))return'lunes';
+  if(s.includes('miercoles')||s.includes('adulto'))return'miercoles';
+  if(s.includes('jueves')||s.includes('mexiquense'))return'jueves';
+  if(s.includes('movil'))return'movil';
+  if(s.includes('vacun'))return'vacunacion';
+  if(s.includes('especial'))return'especial';
+  return null;
+}
+function tcOf(t){var k=tipoKey(t);return k?TYPE_CONFIG[k]:{color:'#9F2241',cls:'t-default',label:t||''};}
+function parseFecha(s){if(!s)return null;var d=new Date(s+'T12:00:00');return isNaN(d)?null:d;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── Avance de captura JS19 ─────────────────────
+   Sólo estado, fracción y porcentaje. El estado se
+   distingue por texto, no únicamente por color. */
+var CAPTURE_LABELS={
+  PROGRAMADA:'Programada',EN_CAPTURA:'En captura',PARCIAL:'Captura parcial',
+  COMPLETA:'Captura completa',SIN_REPORTE:'Sin reporte'
+};
+
+function capturaHtml(c){
+  if(!c)return '';
+  var estado=CAPTURE_LABELS[c.estado]?c.estado:'SIN_REPORTE';
+  var porcentaje=Math.max(0,Math.min(100,Number(c.porcentaje)||0));
+  var nombres=Array.isArray(c.modulos)&&c.modulos.length
+    ? '<div class="card-dir">Módulos: '+c.modulos.map(esc).join(', ')+'</div>':'';
+  return '<div class="capture-progress" aria-label="Avance de captura '+porcentaje+' por ciento">'
+    +'<div class="capture-head"><span class="capture-badge capture-'+estado+'">'+CAPTURE_LABELS[estado]+'</span>'
+    +'<span>'+Number(c.modulosCerrados||0)+'/'+Number(c.modulosConvocados||0)+' módulos</span></div>'
+    +'<div class="capture-track" aria-hidden="true"><div class="capture-fill" style="width:'+porcentaje+'%"></div></div>'
+    +nombres+'</div>';
+}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500);}
+function isMobile(){return window.innerWidth<=767;}
+
+function getStatus(fecha){
+  var d=parseFecha(fecha);if(!d)return{pill:'',countdown:''};
+  var now=new Date();now.setHours(0,0,0,0);
+  var diff=Math.round((d-now)/86400000);
+  if(diff===0)return{pill:'<span class="st-pill st-hoy"><span class="st-dot"></span>HOY</span>',countdown:'hoy'};
+  if(diff===1)return{pill:'<span class="st-pill st-pronto"><span class="st-dot"></span>Mañana</span>',countdown:'mañana'};
+  if(diff>0&&diff<=6)return{pill:'<span class="st-pill st-pronto"><span class="st-dot"></span>En '+diff+' días</span>',countdown:'en '+diff+' días'};
+  if(diff>6)return{pill:'<span class="st-pill st-proxima"><span class="st-dot"></span>Próxima</span>',countdown:'en '+diff+' días'};
+  return{pill:'<span class="st-pill st-pasada"><span class="st-dot"></span>Pasada</span>',countdown:'hace '+Math.abs(diff)+' días'};
+}
+
+/* ── Mapa colapsable ────────────────────────── */
+function toggleMap(){
+  mapOpen=!mapOpen;
+  var wrap=document.getElementById('map-section-wrap');
+  var btn=document.getElementById('map-toggle');
+  var lbl=document.getElementById('map-toggle-label');
+  wrap.classList.toggle('collapsed',!mapOpen);
+  btn.classList.toggle('open',mapOpen);
+  lbl.textContent=mapOpen?'Ocultar mapa':'Ver mapa de jornadas';
+  if(mapOpen&&map)setTimeout(function(){map.invalidateSize();},320);
+}
+var filtrosOpen=false;
+function toggleFiltros(){
+  filtrosOpen=!filtrosOpen;
+  var wrap=document.getElementById('filters-wrap');
+  var btn=document.getElementById('filter-toggle');
+  var lbl=document.getElementById('filter-toggle-label');
+  wrap.classList.toggle('collapsed',!filtrosOpen);
+  btn.classList.toggle('open',filtrosOpen);
+  lbl.textContent=filtrosOpen?'Ocultar búsqueda':'Buscar y filtrar';
+}
+
+/* ── Datos ──────────────────────────────────── */
+// Servido por doGet: pide los datos vía google.script.run (sin URL).
+// Copia estática en GitHub Pages (visor-jornadas.html del portal): hace fetch a VISOR_API,
+// que responde con CORS abierto y no depende de la sesión de Google del teléfono.
+var VISOR_API='https://script.google.com/macros/s/AKfycbz3CYsiEjwTADeLMo7VzMV4NkfGjDxXDj2jSzthzlnvON-K9Xs7-F1a6WNXusO2HoKCKw/exec';
+function cargarDatos(){
+  function ok(data){
+    if(!data||(!data.ok&&data.error)){mostrarError('Error: '+((data&&data.error)||'respuesta vacía'));}
+    else{
+      ALL_EVENTS=data.events||[];
+      showLastUpdate(data.generado);
+      populateMuniFilter();buildLegend();render();
+    }
+    document.getElementById('loading').classList.add('hidden');
+  }
+  function fallo(err){
+    mostrarError('No se pudieron cargar los datos. '+(err&&err.message?err.message:err));
+    document.getElementById('loading').classList.add('hidden');
+  }
+  if(window.google&&google.script&&google.script.run){
+    google.script.run.withSuccessHandler(ok).withFailureHandler(fallo).getEventosJSON();
+  }else{
+    fetch(VISOR_API+'?format=json').then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}).then(ok).catch(fallo);
+  }
+}
+function mostrarError(m){var b=document.getElementById('error-box');b.innerHTML='⚠️ '+m;b.style.display='block';}
+function showLastUpdate(g){
+  if(!g)return;
+  try{
+    var d=new Date(g);
+    document.getElementById('last-update').textContent=
+      d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+
+      d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){}
+}
+
+/* ── Mapa ───────────────────────────────────── */
+function initMap(){
+  map=L.map('map',{scrollWheelZoom:false,tap:false,touchZoom:true,dragging:true,zoomSnap:.25}).setView([19.51,-98.88],10);
+  // CARTO basemaps ya exige API key (devuelve "API KEY REQUIRED"); Esri Light Gray no requiere llave.
+  var ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+  L.tileLayer(ESRI+'World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap',maxZoom:16}).addTo(map);
+  L.tileLayer(ESRI+'World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:16,pane:'overlayPane'}).addTo(map);
+  markersLayer=L.layerGroup().addTo(map);
+  var CBtn=L.Control.extend({onAdd:function(){
+    var btn=L.DomUtil.create('button','');
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+    btn.title='Centrar';
+    btn.style.cssText='width:34px;height:34px;background:white;border:none;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.22);color:#691C32';
+    L.DomEvent.on(btn,'click',function(e){L.DomEvent.stopPropagation(e);centrarMapa();});
+    return btn;
+  }});
+  new CBtn({position:'topright'}).addTo(map);
+  window.addEventListener('resize',function(){setTimeout(function(){if(map)map.invalidateSize();},150);});
+  window.addEventListener('orientationchange',function(){setTimeout(function(){if(map)map.invalidateSize();},300);});
+}
+var _bounds=[],_single=null,selMk=null;
+function centrarMapa(){
+  if(_bounds.length>1)map.fitBounds(_bounds,{padding:[30,30],maxZoom:11,animate:true});
+  else if(_single)map.setView(_single,13,{animate:true});
+  else map.setView([19.51,-98.88],10,{animate:true});
+}
+function makeIcon(color,sel){
+  var sz=sel?34:28,an=sel?17:14;
+  var svg='<svg width="'+sz+'" height="'+(sz*1.43)+'" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg"><filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="1.8" flood-opacity=".22"/></filter><path d="M15 2C7.27 2 1 8.27 1 16c0 11.35 14 25 14 25s14-13.65 14-25C29 8.27 22.73 2 15 2z" fill="'+color+'" stroke="white" stroke-width="'+(sel?2.5:2)+'" filter="url(#sh)"/><rect x="12.5" y="9" width="5" height="14" rx="1.8" fill="white" opacity=".95"/><rect x="8.5" y="13" width="13" height="5" rx="1.8" fill="white" opacity=".95"/></svg>';
+  return L.divIcon({className:'',html:svg,iconSize:[sz,sz*1.43],iconAnchor:[an,sz*1.43],popupAnchor:[0,sel?-50:-42]});
+}
+function buildLegend(){
+  var h='<div class="legend-hd">Tipos</div>';
+  for(var k in TYPE_CONFIG){var tc=TYPE_CONFIG[k];h+='<div class="legend-row"><div class="legend-dot" style="background:'+tc.color+'"></div><span>'+esc(tc.label)+'</span></div>';}
+  document.getElementById('legend').innerHTML=h;
+}
+function renderMap(evts){
+  markersLayer.clearLayers();_bounds=[];selMk=null;
+  evts.forEach(function(e){
+    if(!e.lat||!e.lng)return;
+    var tc=tcOf(e.tipo);
+    var mk=L.marker([e.lat,e.lng],{icon:makeIcon(tc.color,false)}).addTo(markersLayer);
+    _bounds.push([e.lat,e.lng]);
+    (function(ev,m,tcc){
+      m.on('click',function(){
+        if(selMk&&selMk!==m)selMk.setIcon(makeIcon(tcOf((selMk._ev||{}).tipo).color,false));
+        m.setIcon(makeIcon(tcc.color,true));selMk=m;m._ev=ev;
+        showDetailPanel(ev);
+        if(isMobile()){
+          // Si el mapa está abierto, hacer scroll al panel de detalle
+          setTimeout(function(){
+            var el=document.getElementById('map-detail');
+            if(el){var y=el.getBoundingClientRect().top+window.scrollY-12;window.scrollTo({top:y,behavior:'smooth'});}
+          },150);
+        }
+      });
+    })(e,mk,tc);
+  });
+  _single=_bounds.length===1?_bounds[0]:null;
+  var pad=isMobile()?[20,20]:[40,40];
+  if(_bounds.length>1)map.fitBounds(_bounds,{padding:pad,maxZoom:11,animate:true});
+  else if(_bounds.length===1)map.setView(_bounds[0],13,{animate:true});
+  else map.setView([19.51,-98.88],10,{animate:true});
+}
+function showDetailPanel(e){
+  if(e.esVacunacion){
+    document.getElementById('detail-empty').style.display='none';
+    var dcv=document.getElementById('detail-card');dcv.style.display='block';
+    var stv=getStatusRango(e);
+    var diasV=e.dias||'';
+    var esFindeV=/(s[áa]bado|domingo)/i.test(diasV)&&!/lunes/i.test(diasV);
+    var diV=parseFecha(e.fecha),dfV=parseFecha(e.fechaFin)||diV;
+    var mesV=diV?MONTHS_FULL[diV.getMonth()]:'';
+    var fechaFraseV=esFindeV?('Durante '+mesV):((diV?diV.getDate():'')+' al '+(dfV?dfV.getDate():'')+' de '+mesV);
+    dcv.innerHTML=
+      '<div style="height:4px;background:#691C32;border-radius:2px;margin-bottom:14px"></div>'+
+      '<span class="badge t-especial">💉 Vacunación</span>'+
+      '<div style="margin-top:8px">'+stv.pill+'</div>'+
+      '<div style="margin-top:10px;margin-bottom:4px;font-family:\'Playfair Display\',serif;font-size:16px;font-weight:700;color:var(--ink);line-height:1.3">'+esc(e.sede)+'</div>'+
+      '<div style="font-size:10.5px;color:var(--muted);margin-bottom:12px">'+esc(e.municipio)+(e.coordinacion?' · Coord. '+esc(e.coordinacion):'')+'</div>'+
+      '<div style="height:1px;background:var(--border);margin-bottom:12px"></div>'+
+      '<div style="font-size:12px;color:var(--ink);line-height:1.8">'+
+        '📅 '+esc(e.dias||'')+'<br>'+
+        '🕒 '+esc(e.horaIni)+' – '+esc(e.horaFin)+' h<br>'+
+        '🗓️ '+esc(fechaFraseV)+
+      '</div>'+
+      (e.direccion?'<div style="margin-top:10px;font-size:11.5px;color:var(--muted);line-height:1.4">📌 '+esc(e.direccion)+'</div>':'')+
+      (mapsLink(e)?'<a class="detail-btn" style="margin-top:14px" href="'+esc(mapsLink(e))+'" target="_blank" rel="noopener">Cómo llegar</a>':'');
+    return;
+  }
+  document.getElementById('detail-empty').style.display='none';
+  var dc=document.getElementById('detail-card');dc.style.display='block';
+  var tc=tcOf(e.tipo);var st=getStatus(e.fecha);
+  var d=parseFecha(e.fecha);
+  var dayName=d?DAYS[d.getDay()]:'';var dayNum=d?d.getDate():'';
+  var monthName=d?MONTHS_FULL[d.getMonth()]:'';var yearNum=d?d.getFullYear():'';
+  var tags=(e.programas||[]).slice(0,6).map(function(p){return'<span class="detail-tag" style="font-size:9px;font-weight:700;background:var(--bg-warm);color:var(--muted);padding:3px 9px;border-radius:3px;border:1px solid var(--border-dk);text-transform:uppercase;display:inline-block;margin:1px">'+esc(p)+'</span>';}).join('');
+  dc.innerHTML=
+    '<div style="height:4px;background:'+tc.color+';border-radius:2px;margin-bottom:14px"></div>'+
+    '<span class="badge '+tc.cls+'" style="font-size:9px">'+esc(tc.label)+'</span>'+
+    '<div style="margin-top:8px">'+st.pill+'</div>'+
+    '<div style="margin-top:10px;margin-bottom:4px;font-family:\'Playfair Display\',serif;font-size:16px;font-weight:700;color:var(--ink);line-height:1.3">'+esc(e.sede)+'</div>'+
+    '<div style="font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:12px">'+
+      '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>'+esc(e.municipio)+
+    '</div>'+
+    '<div style="height:1px;background:var(--border);margin-bottom:12px"></div>'+
+    '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'+
+      '<div style="display:flex;gap:8px;font-size:12px;color:var(--muted)">'+
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+
+        '<span style="color:var(--ink)">'+dayName+' '+dayNum+' de '+monthName+' '+yearNum+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;font-size:12px;color:var(--muted);flex-wrap:wrap">'+
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'+
+        '<span style="color:var(--ink)">09:00 – 14:00 h</span>'+
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px">'+esc(st.countdown)+'</span>'+
+      '</div>'+
+      (e.direccion?'<div style="display:flex;gap:8px;font-size:11.5px;color:var(--muted);line-height:1.4"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" style="flex-shrink:0;margin-top:1px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+esc(e.direccion)+'</span></div>':'')+
+    '</div>'+
+    capturaHtml(e.captura)+
+    (tags?'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:14px">'+tags+'</div>':'')+
+    (e.mapsUrl?'<a class="detail-btn" href="'+esc(e.mapsUrl)+'" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Cómo llegar</a>':'');
+}
+function hideDetailPanel(){
+  document.getElementById('detail-card').style.display='none';
+  document.getElementById('detail-empty').style.display='flex';
+  if(selMk){selMk.setIcon(makeIcon(tcOf((selMk._ev||{}).tipo).color,false));selMk=null;}
+}
+
+/* ── Filtros ────────────────────────────────── */
+function populateMuniFilter(){
+  var munis={};ALL_EVENTS.forEach(function(e){if(e.municipio)munis[e.municipio]=true;});
+  var sel=document.getElementById('municipio-filter');
+  while(sel.options.length>1)sel.remove(1);
+  Object.keys(munis).sort().forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+}
+function filterEvents(){
+  var q=(document.getElementById('search').value||'').toLowerCase().trim();
+  var tipo=document.getElementById('tipo').value;
+  var muni=document.getElementById('municipio-filter').value;
+  var per=document.getElementById('periodo').value;
+  var now=new Date();now.setHours(0,0,0,0);
+  var we=new Date(now);we.setDate(we.getDate()+7);
+  return ALL_EVENTS.filter(function(e){
+    if(q&&!e.sede.toLowerCase().includes(q)&&!e.municipio.toLowerCase().includes(q)&&!(e.programas||[]).join(' ').toLowerCase().includes(q))return false;
+    if(tipo&&tipoKey(e.tipo)!==tipo)return false;
+    if(muni&&e.municipio!==muni)return false;
+    if(per!=='todas'){
+      if(e.esVacunacion){
+        var di=parseFecha(e.fecha),df=parseFecha(e.fechaFin)||di;if(!di)return false;
+        var m0=new Date(now.getFullYear(),now.getMonth(),1);
+        var m1=new Date(now.getFullYear(),now.getMonth()+1,0);
+        if(per==='proximas'&&df<now)return false;
+        if(per==='pasadas'&&df>=now)return false;
+        if(per==='semana'&&(di>we||df<now))return false;
+        if(per==='mes'&&(di>m1||df<m0))return false;
+      } else {
+        var ed=parseFecha(e.fecha);if(!ed)return false;
+        if(per==='proximas'&&ed<now)return false;
+        if(per==='pasadas'&&ed>=now)return false;
+        if(per==='semana'&&(ed<now||ed>we))return false;
+        if(per==='mes'&&(ed.getMonth()!==now.getMonth()||ed.getFullYear()!==now.getFullYear()))return false;
+      }
+    }
+    return true;
+  }).sort(function(a,b){var da=parseFecha(a.fecha),db=parseFecha(b.fecha);if(!da&&!db)return 0;if(!da)return 1;if(!db)return-1;return da-db;});
+}
+
+/* ── Stats ──────────────────────────────────── */
+function updateStats(evts){
+  var munis=new Set(evts.map(function(e){return e.municipio;}));
+  var now=new Date();now.setHours(0,0,0,0);var we=new Date(now);we.setDate(we.getDate()+7);
+  var sem=evts.filter(function(e){
+    if(e.esVacunacion){var di=parseFecha(e.fecha),df=parseFecha(e.fechaFin)||di;return di&&di<=we&&df>=now;}
+    var d=parseFecha(e.fecha);return d&&d>=now&&d<=we;
+  });
+  document.getElementById('s-total').textContent=evts.length;
+  document.getElementById('s-munis').textContent=munis.size;
+  document.getElementById('s-week').textContent=sem.length;
+}
+
+/* ── Render Cards ───────────────────────────── */
+function renderCards(evts){
+  var el=document.getElementById('cards');
+  document.getElementById('cards-count').textContent=evts.length+' jornada'+(evts.length!==1?'s':'');
+  if(!evts.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><h3>Sin resultados</h3><p>Prueba cambiando los filtros.</p></div>';
+    return;
+  }
+  el.innerHTML=evts.map(function(e,i){
+    if(e.esVacunacion)return cardVacuna(e,i);
+    return curStyle==='a'?cardA(e,i):(curStyle==='c'?cardC(e,i):cardB(e,i));
+  }).join('');
+}
+
+function cc(e){
+  var tc=tcOf(e.tipo);var st=getStatus(e.fecha);var d=parseFecha(e.fecha);
+  return{
+    tc:tc,st:st,d:d,
+    dayN:d?d.getDate():'—',
+    monN:d?MONTHS[d.getMonth()].toUpperCase():'—',
+    yearN:d?d.getFullYear():'',
+    dowN:d?DAYS_SHORT[d.getDay()].toUpperCase():'',
+    tags:(e.programas||[]).slice(0,4).map(function(p){return'<span class="tag">'+esc(p)+'</span>';}).join(''),
+    hasMap:!!(e.lat&&e.lng)
+  };
+}
+
+function cardA(e,i){
+  var c=cc(e);var del=Math.min(i*18,300);
+  var rows='<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>09:00 – 14:00 h</span></div>';
+  if(e.direccion)rows+='<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+esc(e.direccion)+'</span></div>';
+  return'<div class="card '+c.tc.cls+'" style="--tc:'+c.tc.color+';animation-delay:'+del+'ms" onclick="cardClick('+( c.hasMap?e.lat:'null')+','+(c.hasMap?e.lng:'null')+')">'
+    +'<div class="card-body">'
+    +'<div class="card-meta-row">'
+    +'<div class="card-date-block"><div class="card-date-day">'+c.dayN+'</div><div class="card-date-month">'+c.monN+'</div><div class="card-date-year">'+c.yearN+'</div></div>'
+    +'<div class="card-badges">'+c.st.pill+'<span class="badge">'+esc(c.tc.label)+'</span></div>'
+    +'</div>'
+    +'<div class="card-name">'+esc(e.sede)+'</div>'
+    +'<div class="card-muni"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>'+esc(e.municipio)+'</div>'
+    +'<div class="card-info">'+rows+'</div>'
+    +capturaHtml(e.captura)
+    +(c.tags?'<div class="card-tags">'+c.tags+'</div>':'')
+    +'<div class="card-footer"><span class="card-countdown">'+esc(c.st.countdown)+'</span>'
+    +(c.hasMap?'<button class="btn-zoom" title="Ver en mapa" onclick="event.stopPropagation();flyTo('+e.lat+','+e.lng+')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>':'')
+    +(e.mapsUrl?'<a class="btn-goto" href="'+esc(e.mapsUrl)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Cómo llegar</a>':'')
+    +'</div></div></div>';
+}
+
+function cardB(e,i){
+  var c=cc(e);var del=Math.min(i*18,300);
+  var rows='<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>09:00 – 14:00 h</span></div>';
+  if(e.direccion)rows+='<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+esc(e.direccion)+'</span></div>';
+  return'<div class="card '+c.tc.cls+'" style="--tc:'+c.tc.color+';animation-delay:'+del+'ms" onclick="cardClick('+( c.hasMap?e.lat:'null')+','+(c.hasMap?e.lng:'null')+')">'
+    +'<div class="card-left"><div class="card-left-day">'+c.dayN+'</div><div class="card-left-month">'+c.monN+'</div><div class="card-left-dow">'+c.dowN+'</div></div>'
+    +'<div class="card-body">'
+    +'<div class="card-top"><div class="card-name">'+esc(e.sede)+'</div>'+c.st.pill+'</div>'
+    +'<div class="card-muni"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>'+esc(e.municipio)+'</div>'
+    +'<div class="card-info">'+rows+'</div>'
+    +capturaHtml(e.captura)
+    +(c.tags?'<div class="card-tags">'+c.tags+'</div>':'')
+    +'<div class="card-footer"><span class="card-countdown">'+esc(c.st.countdown)+'</span>'
+    +'<span class="badge">'+esc(c.tc.label)+'</span>'
+    +(e.mapsUrl?'<a class="btn-goto" href="'+esc(e.mapsUrl)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Cómo llegar</a>':'')
+    +'</div></div></div>';
+}
+
+function cardC(e,i){
+  var c=cc(e);var del=Math.min(i*12,240);
+  var tags=(e.programas||[]).slice(0,3).map(function(p){return'<span class="tag">'+esc(p)+'</span>';}).join('');
+  return'<div class="card '+c.tc.cls+'" style="--tc:'+c.tc.color+';animation-delay:'+del+'ms" onclick="cardClick('+( c.hasMap?e.lat:'null')+','+(c.hasMap?e.lng:'null')+')">'
+    +'<div class="card-left"><div class="card-left-day">'+c.dayN+'</div><div class="card-left-month">'+c.monN+'</div><div class="card-left-dow">'+c.dowN+'</div></div>'
+    +'<div class="card-body"><div class="card-name">'+esc(e.sede)+'</div>'
+    +'<div class="card-sub"><div class="card-muni"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>'+esc(e.municipio)+'</div>'
+    +'<div class="card-time">09:00–14:00 h</div>'
+    +(e.direccion?'<div class="card-dir">'+esc(e.direccion)+'</div>':'')+'</div>'
+    +capturaHtml(e.captura)+'</div>'
+    +'<div class="card-right">'+c.st.pill+'<span class="badge">'+esc(c.tc.label)+'</span>'
+    +(tags?'<div class="card-tags">'+tags+'</div>':'')
+    +(e.mapsUrl?'<a class="btn-goto" href="'+esc(e.mapsUrl)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:10px;padding:7px 10px">📍 Ir</a>':'')
+    +'</div></div>';
+}
+
+/* ── Vacunación: rango de fechas ────────────── */
+function fmtRango(ini,fin){
+  var di=parseFecha(ini),df=parseFecha(fin);
+  if(!di)return'';
+  if(df&&df.getMonth()!==di.getMonth())
+    return di.getDate()+' '+MONTHS[di.getMonth()]+'–'+df.getDate()+' '+MONTHS[df.getMonth()];
+  return di.getDate()+(df?'–'+df.getDate():'');
+}
+function getStatusRango(e){
+  var di=parseFecha(e.fecha),df=parseFecha(e.fechaFin)||di;
+  if(!di)return{pill:'',countdown:''};
+  var now=new Date();now.setHours(0,0,0,0);
+  if(now<di){var d=Math.round((di-now)/86400000);
+    return{pill:'<span class="st-pill st-proxima"><span class="st-dot"></span>Próxima</span>',countdown:'inicia en '+d+' día'+(d!==1?'s':'')};}
+  if(now>df)return{pill:'<span class="st-pill st-pasada"><span class="st-dot"></span>Finalizada</span>',countdown:'finalizó'};
+  return{pill:'<span class="st-pill st-hoy"><span class="st-dot"></span>Vigente</span>',countdown:'en curso'};
+}
+function mapsLink(e){
+  if(e.mapsUrl)return e.mapsUrl;
+  if(e.lat&&e.lng)return'https://www.google.com/maps/dir/?api=1&destination='+e.lat+','+e.lng;
+  var q=[e.sede,e.direccion,e.municipio].filter(Boolean).join(', ');
+  return q?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q):'';
+}
+function cardVacuna(e,i){
+  var del=Math.min(i*18,300);
+  var di=parseFecha(e.fecha);
+  var mon=di?MONTHS_FULL[di.getMonth()].toUpperCase():'';
+  var st=getStatusRango(e);
+  var hasMap=!!(e.lat&&e.lng);
+  var maps=mapsLink(e);
+  var diasTxt=e.dias||'';
+  var esFinde=/(s[áa]bado|domingo)/i.test(diasTxt)&&!/lunes/i.test(diasTxt);
+  var leftBlock;
+  if(esFinde){
+    var diasU=esc(diasTxt.toUpperCase()).replace(/ Y /,' Y<br>');
+    leftBlock='<div class="vac-mes">'+mon+'</div><div class="vac-div"></div><div class="vac-dias">'+diasU+'</div>';
+  } else {
+    var diasU2=esc(diasTxt.toUpperCase()).replace('LUNES A VIERNES','LUN A VIE');
+    leftBlock='<div class="vac-mes">'+mon+'</div><div class="vac-rango">'+fmtRango(e.fecha,e.fechaFin)+'</div><div class="vac-diasw">'+diasU2+'</div>';
+  }
+  var dirRow=e.direccion?'<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>'+esc(e.direccion)+'</span></div>':'';
+  return'<div class="card-vac t-especial" style="animation-delay:'+del+'ms" onclick="cardClick('+(hasMap?e.lat:'null')+','+(hasMap?e.lng:'null')+')">'
+    +'<div class="card-left">'+leftBlock+'</div>'
+    +'<div class="card-body">'
+    +'<div class="card-top"><div class="card-name">'+esc(e.sede)+'</div>'+st.pill+'</div>'
+    +'<div class="card-muni"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>'+esc(e.municipio)+(e.coordinacion?' · Coord. '+esc(e.coordinacion):'')+'</div>'
+    +capturaHtml(e.captura)
+    +'<div class="card-info">'
+      +'<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>'+esc(e.horaIni)+' – '+esc(e.horaFin)+' h</span></div>'
+      +'<div class="card-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>'+esc(e.dias||'')+'</span></div>'
+      +dirRow
+    +'</div>'
+    +'<div class="card-footer"><span class="card-countdown">'+esc(st.countdown)+'</span>'
+    +'<span class="badge t-especial">💉 Vacunación</span>'
+    +(maps?'<a class="btn-goto" href="'+esc(maps)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Cómo llegar</a>':'')
+    +'</div></div></div>';
+}
+
+function render(){var evts=filterEvents();updateStats(evts);renderMap(evts);renderCards(evts);}
+
+function flyTo(lat,lng){
+  if(!lat||!lng){toast('Sin coordenadas');return;}
+  // Si mapa está cerrado, abrirlo primero
+  if(!mapOpen){
+    toggleMap();
+    setTimeout(function(){doFly(lat,lng);},400);
+  } else {doFly(lat,lng);}
+}
+function doFly(lat,lng){
+  map.setView([lat,lng],14,{animate:true,duration:.5});
+  markersLayer.eachLayer(function(l){
+    if(l.getLatLng){var p=l.getLatLng();if(Math.abs(p.lat-lat)<0.0001&&Math.abs(p.lng-lng)<0.0001)setTimeout(function(){l.fire('click');},550);}
+  });
+  // Scroll al mapa en móvil
+  if(isMobile()){
+    var ms=document.getElementById('map-section-wrap');
+    if(ms){var y=ms.getBoundingClientRect().top+window.scrollY-12;window.scrollTo({top:y,behavior:'smooth'});}
+  }
+}
+function cardClick(lat,lng){if(lat&&lng)flyTo(lat,lng);}
+
+function setStyle(s){
+  curStyle=s;
+  document.getElementById('cards-wrapper').className='style-'+s;
+  ['a','b','c'].forEach(function(k){
+    var b=document.getElementById('sb-'+k);if(b)b.classList.toggle('active',k===s);
+  });
+  try{localStorage.setItem('jornadas-style',s);}catch(e){}
+  renderCards(filterEvents());
+}
+function setPeriodo(v){document.getElementById('periodo').value=v;render();}
+function twSync(s){
+  document.querySelectorAll('#tweaks-panel .tweak-opts').forEach(function(g,i){if(i===0)g.querySelectorAll('.tweak-btn').forEach(function(b){b.classList.remove('active');});});
+  var el=document.getElementById('tw-'+s);if(el)el.classList.add('active');
+}
+function twSync2(id){
+  document.querySelectorAll('#tweaks-panel .tweak-opts').forEach(function(g,i){if(i===1)g.querySelectorAll('.tweak-btn').forEach(function(b){b.classList.remove('active');});});
+  var el=document.getElementById(id);if(el)el.classList.add('active');
+}
+
+/* ── Tweaks protocol ────────────────────────── */
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='__activate_edit_mode')document.getElementById('tweaks-panel').classList.add('visible');
+  if(e.data.type==='__deactivate_edit_mode')document.getElementById('tweaks-panel').classList.remove('visible');
+});
+try{window.parent.postMessage({type:'__edit_mode_available'},'*');}catch(e){}
+
+/* ── Init ───────────────────────────────────── */
+// Mapa: colapsado en móvil, abierto en desktop
+if(!isMobile()){
+  mapOpen=true;
+  document.getElementById('map-section-wrap').classList.remove('collapsed');
+  var btn=document.getElementById('map-toggle');if(btn){btn.classList.add('open');document.getElementById('map-toggle-label').textContent='Ocultar mapa';}
+} else {
+  document.getElementById('map-section-wrap').classList.add('collapsed');
+}
+
+// Filtros: colapsados en móvil, siempre visibles en escritorio
+if(!isMobile()){
+  document.getElementById('filters-wrap').classList.remove('collapsed');
+}
+
+initMap();
+
+// Estilo por defecto: "Editorial" en móvil, el guardado en desktop
+var savedStyle='b';
+try{savedStyle=localStorage.getItem('jornadas-style')||'b';}catch(e){}
+setStyle(savedStyle);
+twSync(savedStyle);
+
+['search','tipo','municipio-filter','periodo'].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener('input',render);el.addEventListener('change',render);
+});
+
+cargarDatos();
+</script>
+</body>
+</html>
