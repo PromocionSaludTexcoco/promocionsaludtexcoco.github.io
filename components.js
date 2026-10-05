@@ -166,6 +166,7 @@ ${NAV_MENUS.map(dropdown).join('')}
         <a href="reportes.html">Reportes</a>
         <a href="directorio.html">Directorio</a>
         <a href="recursos-psicologia.html">Recursos psicología</a>
+        <a href="privacidad.html">Aviso de privacidad</a>
       </div>
       <div class="footer-links">
         <span>${CONTACTO.direccion}</span>
