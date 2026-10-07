@@ -39,46 +39,72 @@
 
     <section class="section-block">
       <div class="container legal">
-        <p class="fecha">Última actualización: 4 de octubre de 2026</p>
+        <p class="fecha">Última actualización: 7 de octubre de 2026</p>
 
-        <p>Este aviso aplica a las aplicaciones web <strong>Promoción a la Salud · Jurisdicción Sanitaria Texcoco</strong> (el portal de Promoción y los capturadores de información operativa), publicadas desde <a href="index.html">promocionsaludtexcoco.github.io</a>.</p>
+        <p>Este aviso de privacidad aplica a la aplicación <strong>Promoción a la Salud · Jurisdicción Sanitaria Texcoco</strong>: el portal de Promoción y los capturadores web de información operativa que se abren desde <a href="index.html">promocionsaludtexcoco.github.io</a> y que funcionan con Google Apps Script (proyecto de Google Cloud de la cuenta institucional del Departamento). Explica qué datos se recogen, para qué, con qué permisos de Google, cuánto tiempo se guardan y cómo ejercer tus derechos.</p>
 
-        <h2>Quién es responsable</h2>
-        <p>El Departamento de Promoción a la Salud de la Jurisdicción Sanitaria XIX Texcoco, del Instituto de Salud del Estado de México (ISEM).</p>
+        <h2>1. Quién es responsable</h2>
+        <p>El Departamento de Promoción a la Salud de la Jurisdicción Sanitaria XIX Texcoco, del Instituto de Salud del Estado de México (ISEM), con domicilio en Cda. Carretera Papalotla s/n, San Andrés Chiautla 1, 56030 Chiautla, Estado de México. Contacto: <a href="mailto:comitepromociontex@gmail.com">comitepromociontex@gmail.com</a>.</p>
 
-        <h2>A quién va dirigido</h2>
-        <p>Estas herramientas son de uso interno del personal de salud (promotores, coordinaciones y jefaturas). No están pensadas para el público en general ni piden registrarse a quien solo consulta este sitio.</p>
+        <h2>2. A quién va dirigida la aplicación</h2>
+        <p>Es una herramienta de uso interno del personal de salud de la Jurisdicción: promotores, nutriólogos, psicólogos, coordinaciones municipales y la jefatura. No está dirigida al público en general ni a menores de edad. Visitar las páginas informativas del sitio no requiere registro.</p>
 
-        <h2>Qué información se registra</h2>
+        <h2>3. Qué datos se recogen y de dónde</h2>
+        <p>Solo se recogen los datos que el personal escribe o adjunta al capturar su trabajo:</p>
         <ul>
-          <li>Datos operativos de trabajo: actividades realizadas, unidad de salud (CLUES), fecha, periodo, metas e indicadores, evidencias de las actividades (por ejemplo fotografías y ubicación de la actividad) y el nombre o clave del promotor que captura.</li>
-          <li>Datos técnicos mínimos del uso de la herramienta, como el dispositivo y navegador, necesarios para que funcione la captura sin conexión.</li>
+          <li><strong>Datos de cuenta del personal:</strong> nombre, usuario de acceso, rol (por ejemplo promotor o psicólogo), coordinación y unidad de salud (CLUES) a la que pertenece. La contraseña nunca se guarda en claro: se almacena cifrada con una función de resumen (hash).</li>
+          <li><strong>Datos de la actividad realizada:</strong> fecha, periodo, tipo de actividad, tema, lugar, número de asistentes y cantidades agregadas por grupo de edad o sexo (por ejemplo, número de talleres, consultas o cartillas entregadas).</li>
+          <li><strong>Evidencias:</strong> fotografías, listas de asistencia escaneadas y documentos que el personal decide adjuntar. Cuando el capturador lo solicita y el dispositivo lo permite, la ubicación aproximada (GPS) del lugar donde se realizó la actividad.</li>
+          <li><strong>Datos técnicos:</strong> fecha y hora de cada registro, identificador de la sesión y un registro de auditoría de cambios (quién capturó o modificó un dato y cuándo). El navegador guarda localmente borradores y la sesión para poder trabajar sin conexión; no se usan cookies de publicidad ni herramientas de rastreo de terceros.</li>
         </ul>
-        <p>No se recopilan datos personales sensibles de pacientes. La información es de trazabilidad operativa y no sustituye al control de asistencia, que corresponde a otras áreas.</p>
+        <p><strong>No se recogen datos personales de pacientes</strong> (nombres, CURP, domicilio, diagnósticos ni expedientes clínicos). Las cifras de atención se manejan siempre como totales por unidad y periodo.</p>
 
-        <h2>Para qué se usa</h2>
-        <p>Para dar seguimiento a las actividades de promoción de la salud, integrar reportes mensuales, trimestrales y anuales, y evaluar el avance de metas institucionales. No se usa con fines comerciales ni publicitarios.</p>
-
-        <h2>Datos de usuario de Google y permisos de Google</h2>
-        <p>Las aplicaciones se ejecutan con Google Apps Script bajo una cuenta institucional del Departamento. Esa cuenta autoriza a la aplicación a:</p>
+        <h2>4. Para qué se usan</h2>
         <ul>
-          <li>leer y escribir las hojas de cálculo del Departamento donde se guardan los registros (permiso de Hojas de cálculo);</li>
-          <li>guardar y consultar las evidencias en las carpetas del Departamento (permiso de Drive);</li>
-          <li>enviar correos de aviso y de cierre desde esa cuenta institucional (permiso de envío de correo);</li>
-          <li>conectarse a servicios externos necesarios para el funcionamiento y programar tareas automáticas del propio proyecto.</li>
+          <li>Registrar y dar seguimiento a las actividades de promoción de la salud de cada unidad.</li>
+          <li>Integrar los informes mensuales, trimestrales y anuales que solicita el ISEM y evaluar el avance de las metas institucionales.</li>
+          <li>Validar la información reportada contra los sistemas oficiales de información en salud (SIS/SINBA) para detectar diferencias y corregirlas.</li>
+          <li>Controlar el acceso: que cada persona vea y capture solo lo de su unidad o coordinación.</li>
         </ul>
-        <p>Estos permisos pertenecen a la cuenta institucional del Departamento y se usan solo para operar la aplicación. <strong>Las personas que usan los capturadores no inician sesión con Google ni otorgan acceso a su cuenta, su correo ni sus archivos.</strong> La aplicación no obtiene datos de usuario de Google de quienes la visitan, y la información no se comparte con terceros, no se vende y no se usa para publicidad ni para entrenar modelos de inteligencia artificial.</p>
+        <p>Los datos no se usan con fines comerciales, de publicidad, de perfilamiento ni para entrenar modelos de inteligencia artificial.</p>
 
-        <h2>Con quién se comparte</h2>
-        <p>Solo con las áreas del ISEM y de la Jurisdicción Sanitaria que, por sus funciones, requieren los reportes. No se vende ni se transfiere a terceros ajenos a la institución, salvo obligación legal.</p>
+        <h2>5. Datos de usuario de Google y permisos solicitados</h2>
+        <p>La aplicación se ejecuta con Google Apps Script <strong>en nombre de una sola cuenta institucional del Departamento</strong> (comitepromociontex@gmail.com). Solo esa cuenta otorga los permisos de Google. Las personas que usan los capturadores <strong>no inician sesión con su cuenta de Google</strong>; la aplicación no tiene acceso a su correo, contactos, calendario ni archivos personales.</p>
+        <p>Permisos que la cuenta institucional concede y para qué se usa cada uno:</p>
+        <ul>
+          <li><strong>Hojas de cálculo de Google</strong> (leer y escribir): guardar y consultar los registros de captura en las hojas del Departamento y generar los concentrados y reportes.</li>
+          <li><strong>Google Drive</strong>: guardar las evidencias que adjunta el personal en carpetas del Departamento, leer los archivos de fuentes oficiales que el Departamento carga para validar la información y generar archivos de reporte para descarga.</li>
+          <li><strong>Envío de correo como la cuenta institucional</strong> (Gmail): enviar avisos de cierre de periodo y notificaciones operativas desde esa misma cuenta. No se lee el buzón.</li>
+          <li><strong>Correo electrónico de la cuenta</strong> (userinfo.email): identificar a la cuenta institucional que opera la aplicación.</li>
+          <li><strong>Conexión a servicios externos y ejecución programada</strong>: comunicar entre sí los capturadores del propio Departamento y ejecutar tareas automáticas (por ejemplo, cierres de mes).</li>
+        </ul>
+        <p><strong>Uso limitado.</strong> El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google se ajustan a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Datos de Usuario de los Servicios de API de Google</a>, incluidos los requisitos de Uso Limitado. Los datos obtenidos mediante las API de Google se usan solo para las funciones descritas en este aviso; no se venden, no se transfieren a terceros, no se usan para publicidad y ninguna persona los lee salvo el personal autorizado del Departamento para operar la aplicación, por motivos de seguridad o por obligación legal.</p>
 
-        <h2>Conservación y seguridad</h2>
-        <p>La información se almacena en servicios de Google Workspace y Drive con acceso restringido al personal autorizado. Se conserva el tiempo necesario para los informes y la normatividad aplicable.</p>
+        <h2>6. Con quién se comparten</h2>
+        <p>Solo con las áreas del ISEM y de la Jurisdicción Sanitaria que, por sus funciones, requieren los reportes (por ejemplo, los departamentos de programas de salud y estadística). No se venden ni se transfieren a terceros ajenos a la institución, salvo requerimiento de una autoridad competente conforme a la ley. La infraestructura de almacenamiento la proporciona Google, que actúa como proveedor de servicios.</p>
 
-        <h2>Tus derechos y contacto</h2>
-        <p>Puedes solicitar acceso, corrección o eliminación de tus datos de captura escribiendo a <a href="mailto:comitepromociontex@gmail.com">comitepromociontex@gmail.com</a> o acudiendo a: Cda. Carretera Papalotla s/n, San Andrés Chiautla 1, 56030 Chiautla, Méx.</p>
+        <h2>7. Cuánto tiempo se conservan y cómo se eliminan</h2>
+        <ul>
+          <li>Los registros de captura y sus evidencias se conservan durante el año de operación y hasta <strong>5 años</strong> después, para auditorías y cierres programáticos, conforme a la normatividad de archivo aplicable.</li>
+          <li>Las cuentas del personal se desactivan cuando la persona deja de laborar en la Jurisdicción; sus registros históricos se conservan como parte del archivo institucional.</li>
+          <li>Los borradores guardados en el navegador se borran al enviar el registro o al cerrar la sesión, y el usuario puede borrarlos limpiando los datos del sitio en su navegador.</li>
+          <li>Las sesiones de acceso caducan automáticamente (en horas) y se eliminan del servidor.</li>
+          <li>Las solicitudes de eliminación se atienden en un plazo máximo de <strong>20 días hábiles</strong>.</li>
+        </ul>
 
-        <h2>Cambios a este aviso</h2>
+        <h2>8. Cómo se protegen</h2>
+        <ul>
+          <li>Toda la comunicación viaja cifrada por HTTPS.</li>
+          <li>Las contraseñas se guardan como hash; los accesos entre capturadores usan boletos firmados digitalmente que caducan.</li>
+          <li>Cada persona solo puede ver y capturar la información de su unidad o coordinación; el servidor vuelve a comprobar el permiso en cada petición.</li>
+          <li>Las hojas y carpetas del Departamento tienen acceso restringido al personal autorizado y se lleva un registro de auditoría de los cambios.</li>
+        </ul>
+
+        <h2>9. Tus derechos (ARCO) y cómo revocar el acceso</h2>
+        <p>Puedes solicitar el <strong>acceso, rectificación, cancelación u oposición</strong> al tratamiento de tus datos de captura escribiendo a <a href="mailto:comitepromociontex@gmail.com">comitepromociontex@gmail.com</a> o acudiendo al domicilio indicado arriba, conforme a la Ley de Protección de Datos Personales en Posesión de Sujetos Obligados del Estado de México y Municipios.</p>
+        <p>Como las personas usuarias no conceden permisos de Google a la aplicación, no tienen accesos que revocar. La cuenta institucional puede retirar en cualquier momento los permisos otorgados desde <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+
+        <h2>10. Cambios a este aviso</h2>
         <p>Cualquier modificación se publicará en esta misma página con su fecha de actualización.</p>
 
         <p><a href="index.html">← Volver al inicio</a></p>
