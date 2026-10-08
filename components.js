@@ -95,7 +95,7 @@
     <div class="container navbar-inner">
       <a href="index.html" class="brand">
         <div class="brand-icon">
-          <img src="assets/img/logo-ps.png" alt="Promoción a la Salud ISEM"
+          <img src="assets/img/isotipo.png" alt="Promoción a la Salud ISEM"
                onerror="this.style.display='none';this.parentElement.textContent='PS'">
         </div>
         <div class="brand-text">
@@ -148,7 +148,7 @@ ${NAV_MENUS.map(dropdown).join('')}
     <div class="container footer-inner">
       <div class="footer-brand">
         <div class="brand-icon small">
-          <img src="assets/img/logo-ps.png" alt="Promoción a la Salud"
+          <img src="assets/img/isotipo-blanco.png" alt="Promoción a la Salud"
                onerror="this.style.display='none';this.parentElement.textContent='PS'">
         </div>
         <div>
